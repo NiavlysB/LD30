@@ -21,7 +21,7 @@ function game.init()
 	g.pW = 20
 	g.pH = 30
 	
-	g.pworld = "over"
+	g.pworld = 1
 	
 	game.initiated = true
 end
@@ -38,12 +38,17 @@ function game.update(dt)
 	elseif right then
 		g.pvX = 1
 	else
-		--g.pvX = 0
-		-- TODO: Décélération
+		local decel = 0
+		if g.pstanding then
+			decel = 0.1
+		else
+			decel = 0.01
+		end
+		
 		if g.pvX > 0 then
-			g.pvX = g.pvX - 0.1
+			g.pvX = g.pvX - decel
 		elseif g.pvX < 0 then
-			g.pvX = g.pvX + 0.1
+			g.pvX = g.pvX + decel
 		end
 	end
 	
@@ -57,7 +62,8 @@ function game.update(dt)
 	end
 	
 	-- Collision sol --
-	if (not g.pstanding and not g.pjumping) and ((g.pworld == "over" and g.pY <=0) or (g.pworld == "under" and g.pY >= -1)) then
+	if (not g.pstanding and not g.pjumping)
+	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= -1)) then
 		g.pstanding = true
 		g.pjumping = false
 		g.pvY = 0
@@ -66,11 +72,7 @@ function game.update(dt)
 	
 	-- Gravité --
 	if not g.pstanding then
-		if g.pworld == "over" then -- TODO: peut-être remplacer "over"/"under" par 1/-1 pour éviter un if inutile
-			g.const = -1
-		elseif g.pworld == "under" then
-			g.const = 1
-		end
+		g.const = -g.pworld
 	else
 		g.const = 0
 	end
@@ -83,7 +85,6 @@ function game.update(dt)
 	if math.abs(g.pvX) < 0.1 then
 		g.pvX = 0
 	end
-	
 	
 end
 
@@ -106,6 +107,9 @@ function game.draw()
 	
 	-- Sol --
 	love.graphics.rectangle("fill", 0, g.h/2, g.w, 3)
+	
+	-- Origine --
+	love.graphics.rectangle("fill", g.offsetX + 0 , g.offsetY -1, 5, 5)
 	
 	-- le point de référence sur le joueur est en bas au centre
 	-- (entre ses deux pieds quoi)
