@@ -102,7 +102,7 @@ function game.draw()
 	if g.pjumping then
 		love.graphics.print("Jumping.", 100, 42)
 	else
-		love.graphics.print("Not jumping.", 100, 42)
+		love.graphics.print("Not jumping. TEST", 100, 42)
 	end
 	
 	-- Sol --
