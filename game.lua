@@ -7,6 +7,8 @@ function game.init()
 	g.h = love.window.getHeight()
 	g.offsetY = g.h/2
 	g.offsetX = g.w/2
+	g.zoom = 1
+	g.camvX = 0
 	
 	g.pX = 0
 	g.pY = 50
@@ -30,7 +32,6 @@ function game.update(dt)
 	g.w = love.window.getWidth()
 	g.h = love.window.getHeight()
 	g.offsetY = g.h/2
-	g.offsetX = g.w/2
 	
 	keysDown()
 	if left then
@@ -56,19 +57,12 @@ function game.update(dt)
 	if up and not g.pjumping and g.pstanding then
 		g.pjumping = true
 		g.pstanding = false
-		g.pvY = 300
+		g.pvY = 300*g.pworld
 	else
 		g.pjumping = false
 	end
 	
-	-- Collision sol --
-	if (not g.pstanding and not g.pjumping)
-	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= -1)) then
-		g.pstanding = true
-		g.pjumping = false
-		g.pvY = 0
-		g.pY = 0
-	end
+
 	
 	-- Gravité --
 	if not g.pstanding then
@@ -76,16 +70,54 @@ function game.update(dt)
 	else
 		g.const = 0
 	end
+
+	
+	-- Scrolling --
+	local marge = 100
+	local decalage = 200
+	if g.offsetX + (g.pX-g.pW/2)*g.zoom < marge then
+		goalOffset = g.offsetX + decalage
+	elseif g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge then
+		goalOffset = g.offsetX - decalage
+		g.camvX = g.pvX *1.2 ---
+	else
+		goalOffset = g.offsetX
+	end
+	--g.offsetX = goalOffset
+	if goalOffset < g.offsetX then
+		g.camvX = -1
+	elseif goalOffset > g.offsetX then
+		g.camvX = 1
+	else
+		g.camvX = 0
+	end
+	
+	g.offsetX = g.offsetX + g.camvX * dt *200	
 	
 	g.pvY = g.pvY + 9.81 * dt * g.const * 180
 	
-	g.pX = g.pX + g.pvX * dt * 180
-	g.pY = g.pY + g.pvY * dt
+	newX = g.pX + g.pvX * dt * 220
+	newY = g.pY + g.pvY * dt
 	
 	if math.abs(g.pvX) < 0.1 then
 		g.pvX = 0
 	end
 	
+	-- Collision sol --
+	if (not g.pstanding and not g.pjumping)
+	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= g.pH)) then
+		g.pstanding = true
+		g.pjumping = false
+		g.pvY = 0
+		if g.pworld == 1 then
+			newY = 0
+		else
+			newY = -g.pH*g.zoom
+		end
+	end
+		
+	g.pX = newX
+	g.pY = newY
 end
 
 function game.draw()
@@ -93,7 +125,7 @@ function game.draw()
 	love.graphics.print(g.w.."×"..g.h)
 	love.graphics.print("Player: "..g.pX..","..g.pY.." ("..g.pW.."×"..g.pH..")", 0, 14)
 	love.graphics.print("Vitesse: "..g.pvX..","..g.pvY, 250, 14)
-	love.graphics.print("Offset: "..g.offsetX..","..g.offsetY, 0, 28)
+	love.graphics.print("Offset: "..g.offsetX..","..g.offsetY.." (vitesse : "..g.camvX..")", 0, 28)
 	if g.pstanding then
 		love.graphics.print("Standing.", 0, 42)
 	else
@@ -102,20 +134,23 @@ function game.draw()
 	if g.pjumping then
 		love.graphics.print("Jumping.", 100, 42)
 	else
-		love.graphics.print("Not jumping.", 100, 42)
+		love.graphics.print("Not jumping. TEST", 100, 42)
 	end
+	local marge = 0
+	love.graphics.print("Pos X écran : "..g.offsetX + (g.pX-g.pW/2)*g.zoom.."\n (".._(g.offsetX + (g.pX-g.pW/2)*g.zoom < marge).."/".._(g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge)..")", 0, 56)
 	
 	-- Sol --
-	love.graphics.rectangle("fill", 0, g.h/2, g.w, 3)
-	
+	love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
 	-- Origine --
-	love.graphics.rectangle("fill", g.offsetX + 0 , g.offsetY -1, 5, 5)
+	love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
 	
-	-- le point de référence sur le joueur est en bas au centre
+	-- Joueur --
+	-- (le point de référence sur le joueur est en bas au centre)
 	-- (entre ses deux pieds quoi)
-	love.graphics.rectangle("fill", g.offsetX + g.pX-g.pW-2, g.offsetY + (-g.pY)-g.pH, g.pW, g.pH)
-	-- à adapter pour prendre en compte la conversion de l’unité interne vers les pixels
-	-- (+ scrolling et zoom éventuel)
+	love.graphics.rectangle("fill", g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom, g.pW*g.zoom, g.pH*g.zoom)
+	love.graphics.setColor(255,0,0,255)
+	love.graphics.rectangle("fill", g.offsetX + g.pX*g.zoom, g.offsetY + (-g.pY)*g.zoom, 1, 1)
+	b()
 end
 
 ---------------------------------

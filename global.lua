@@ -4,6 +4,7 @@ w,
 h,
 offsetX,
 offsetY,
+zoom,
 
 -- Gamestate initial --
 state = "game",
@@ -15,8 +16,7 @@ pH,
 pW,
 pvX,
 pvY,
---paX,
---paY,
+
 pworld,
 pstanding,
 pjumping,
