@@ -34,7 +34,7 @@ function love.draw()
 	local delta = love.timer.getAverageDelta()
    	-- Display the frame time in milliseconds for convenience.
    	-- A lower frame time means more frames per second.
-   	love.graphics.print(string.format("Average frame time: %.3f ms", 1000 * delta), 10, 60)
+   	love.graphics.print(string.format("%.3f ms", 1000 * delta), 10, 60)
 end
 
 ------------------------------

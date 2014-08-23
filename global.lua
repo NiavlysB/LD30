@@ -15,10 +15,12 @@ pH,
 pW,
 pvX,
 pvY,
-paX,
-paY,
+--paX,
+--paY,
 pworld,
 pstanding,
+pjumping,
+const,
 
 }
 

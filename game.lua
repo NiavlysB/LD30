@@ -13,9 +13,10 @@ function game.init()
 	
 	g.pvX = 0
 	g.pvY = 0
-	g.paX = 0
-	g.paY = 0
+	--g.paX = 0
+	--g.paY = 0
 	g.pstanding = false
+	g.pjumping = false
 	
 	g.pW = 20
 	g.pH = 30
@@ -37,31 +38,51 @@ function game.update(dt)
 	elseif right then
 		g.pvX = 1
 	else
-		g.pvX = 0
+		--g.pvX = 0
+		-- TODO: Décélération
+		if g.pvX > 0 then
+			g.pvX = g.pvX - 0.1
+		elseif g.pvX < 0 then
+			g.pvX = g.pvX + 0.1
+		end
+	end
+	
+	
+	if up and not g.pjumping and g.pstanding then
+		g.pjumping = true
+		g.pstanding = false
+		g.pvY = 300
+	else
+		g.pjumping = false
+	end
+	
+	-- Collision sol --
+	if (not g.pstanding and not g.pjumping) and ((g.pworld == "over" and g.pY <=0) or (g.pworld == "under" and g.pY >= -1)) then
+		g.pstanding = true
+		g.pjumping = false
+		g.pvY = 0
+		g.pY = 0
 	end
 	
 	-- Gravité --
-	if (not g.pstanding) and ((g.pworld == "over" and g.pY <=0) or (g.pworld == "under" and g.pY >= -1)) then
-		g.pstanding = true
-		g.pvY = 0
-		g.paY = 0
-		g.pY = 0
-	end
 	if not g.pstanding then
 		if g.pworld == "over" then -- TODO: peut-être remplacer "over"/"under" par 1/-1 pour éviter un if inutile
-			g.paY = -1
+			g.const = -1
 		elseif g.pworld == "under" then
-			g.paY = 1
+			g.const = 1
 		end
 	else
-		g.paY = 0
+		g.const = 0
 	end
 	
-	g.pvX = g.pvX + g.paX
-	g.pvY = g.pvY + g.paY * 9.81
+	g.pvY = g.pvY + 9.81 * dt * g.const * 180
 	
-	g.pX = g.pX + g.pvX * dt *140
+	g.pX = g.pX + g.pvX * dt * 180
 	g.pY = g.pY + g.pvY * dt
+	
+	if math.abs(g.pvX) < 0.1 then
+		g.pvX = 0
+	end
 	
 	
 end
@@ -70,11 +91,17 @@ function game.draw()
 	-- Infos --
 	love.graphics.print(g.w.."×"..g.h)
 	love.graphics.print("Player: "..g.pX..","..g.pY.." ("..g.pW.."×"..g.pH..")", 0, 14)
+	love.graphics.print("Vitesse: "..g.pvX..","..g.pvY, 250, 14)
 	love.graphics.print("Offset: "..g.offsetX..","..g.offsetY, 0, 28)
 	if g.pstanding then
 		love.graphics.print("Standing.", 0, 42)
 	else
 		love.graphics.print("Not standing.", 0, 42)
+	end
+	if g.pjumping then
+		love.graphics.print("Jumping.", 100, 42)
+	else
+		love.graphics.print("Not jumping.", 100, 42)
 	end
 	
 	-- Sol --
