@@ -15,15 +15,18 @@ function game.init()
 	
 	g.pvX = 0
 	g.pvY = 0
-	--g.paX = 0
-	--g.paY = 0
 	g.pstanding = false
 	g.pjumping = false
+	g.prunning = false
+	g.power = 1
+	g.pcoeffvitesse = 300
 	
 	g.pW = 20
 	g.pH = 30
 	
 	g.pworld = 1
+	
+	terrain.init()
 	
 	game.initiated = true
 end
@@ -34,9 +37,9 @@ function game.update(dt)
 	g.offsetY = g.h/2
 	
 	keysDown()
-	if left then
+	if left and g.pstanding then
 		g.pvX = -1
-	elseif right then
+	elseif right and g.pstanding then
 		g.pvX = 1
 	else
 		local decel = 0
@@ -57,11 +60,16 @@ function game.update(dt)
 	if up and not g.pjumping and g.pstanding then
 		g.pjumping = true
 		g.pstanding = false
-		g.pvY = 300*g.pworld
+		g.pvY = 300*g.pworld*g.power
 	else
 		g.pjumping = false
 	end
 	
+	if shift and g.pstanding then
+		g.pcoeffvitesse = 400
+	else
+		g.pcoeffvitesse = 300
+	end
 
 	
 	-- Gravité --
@@ -92,11 +100,13 @@ function game.update(dt)
 		g.camvX = 0
 	end
 	
-	g.offsetX = g.offsetX + g.camvX * dt *200	
+	-- Scrolling --
+	-- TODO: à améliorer
+	g.offsetX = g.offsetX + g.camvX * dt * 200	
 	
 	g.pvY = g.pvY + 9.81 * dt * g.const * 180
 	
-	newX = g.pX + g.pvX * dt * 220
+	newX = g.pX + g.pvX * dt * g.pcoeffvitesse
 	newY = g.pY + g.pvY * dt
 	
 	if math.abs(g.pvX) < 0.1 then
@@ -104,6 +114,7 @@ function game.update(dt)
 	end
 	
 	-- Collision sol --
+	-- TODO: à remplacer par une détection de collisions en fonction du terrain
 	if (not g.pstanding and not g.pjumping)
 	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= g.pH)) then
 		g.pstanding = true
@@ -134,23 +145,28 @@ function game.draw()
 	if g.pjumping then
 		love.graphics.print("Jumping.", 100, 42)
 	else
-		love.graphics.print("Not jumping. TEST", 100, 42)
+		love.graphics.print("Not jumping.", 100, 42)
 	end
 	local marge = 0
 	love.graphics.print("Pos X écran : "..g.offsetX + (g.pX-g.pW/2)*g.zoom.."\n (".._(g.offsetX + (g.pX-g.pW/2)*g.zoom < marge).."/".._(g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge)..")", 0, 56)
 	
+	-- Terrain --
+	terrain.draw()
+	
 	-- Sol --
-	love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
+	--love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
 	-- Origine --
 	love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
 	
 	-- Joueur --
 	-- (le point de référence sur le joueur est en bas au centre)
 	-- (entre ses deux pieds quoi)
-	love.graphics.rectangle("fill", g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom, g.pW*g.zoom, g.pH*g.zoom)
-	love.graphics.setColor(255,0,0,255)
-	love.graphics.rectangle("fill", g.offsetX + g.pX*g.zoom, g.offsetY + (-g.pY)*g.zoom, 1, 1)
-	b()
+	love.graphics.draw(img_player, g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom)
+	
+	--love.graphics.rectangle("fill", g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom, g.pW*g.zoom, g.pH*g.zoom)
+	--love.graphics.setColor(255,0,0,255)
+	--love.graphics.rectangle("fill", g.offsetX + g.pX*g.zoom, g.offsetY + (-g.pY)*g.zoom, 1, 1)
+	--b()
 end
 
 ---------------------------------
@@ -159,6 +175,7 @@ function keysDown()
 	left = love.keyboard.isDown("left")
 	right = love.keyboard.isDown("right")
 	up = love.keyboard.isDown("up")
+	shift = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
 end
 
 ---------------------------------

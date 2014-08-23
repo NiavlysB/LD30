@@ -8,9 +8,27 @@ require("terrain")
 --       - faire que la pause volontaire (p) puisse cohabiter avec l’automatique
 --
 --       - avoir un système d’unités interne plus adapté, style 1 par bloc de terrain (et non 1 par pixel)
+--       - Terrain
+--       - Au bout de trois rebonds *consécutifs*, faire que le perso se ramasse par terre
+--       - Cycle jour/nuit. Faire que le jour de l’un soit la nuit de l’autre, et inversement ?
+--       - Plusieurs règles de génération de terrain + thème
+--		    (par exemple un terrain plus accidenté et gris)
+--       - Maîtriser mieux g.power
+--       - Se débarrasser peut-être de ces g.blabla, un jour ?
+		   
 
 function love.load()
 	--game.init() -- à déplacer dans update, if not game.initiated ?
+	imgs_terrain = {
+		["1_"] = love.graphics.newImage("img/terrain1_.png"),
+		["1u"] = love.graphics.newImage("img/terrain1u.png"),
+		["1d"] = love.graphics.newImage("img/terrain1d.png"),
+		["1^"] = love.graphics.newImage("img/terrain1^.png"),
+		["2u"] = love.graphics.newImage("img/terrain2u.png"),
+		["2d"] = love.graphics.newImage("img/terrain2d.png"),
+		["2^"] = love.graphics.newImage("img/terrain2^.png"),
+	}
+	img_player = love.graphics.newImage("img/player.png")
 end
 
 function love.update(dt)
@@ -59,10 +77,14 @@ function love.keypressed(key)
 		togglePause()
 	elseif key == "r" then
 		game.init()
-	elseif key == "+" then
+		
+	elseif key == "kp+" then
 		g.zoom = g.zoom + 0.1
-	elseif key == "-" then
+	elseif key == "kp-" then
 		g.zoom = g.zoom - 0.1
+	
+	elseif key == " " then
+		g.power = g.power + 1
 	elseif key == "escape" then
 		love.event.quit()
 	end
@@ -84,6 +106,8 @@ function togglePause()
 	end
 end
 
+----------------------------------------
+
 function b()
 	love.graphics.setColor(255,255,255,255)
 end
@@ -94,4 +118,13 @@ function _(b)
 	else
 		return "false"
 	end
+end
+
+function table.contains(table, element)
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
 end

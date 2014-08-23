@@ -1,5 +1,6 @@
 g = {
 
+-- Fenêtre --
 w,
 h,
 offsetX,
@@ -16,8 +17,9 @@ pH,
 pW,
 pvX,
 pvY,
+power,
 
-pworld,
+pworld, --  1 = Overworld ; -1 = Underworld  --
 pstanding,
 pjumping,
 const,
