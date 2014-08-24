@@ -15,7 +15,16 @@ require("terrain")
 --		    (par exemple un terrain plus accidenté et gris)
 --       - Maîtriser mieux g.power
 --       - Se débarrasser peut-être de ces g.blabla, un jour ?
-		   
+
+--       -
+
+
+-- Priorités :
+--  	- But, victoire avec un minimum de difficulté
+--		- Graphismes potables (je le fais en 1)
+--		- Caméra plus fluide
+--		- Menu, écrans…
+--		- soleil qui tourne ?
 
 function love.load()
 	--game.init() -- à déplacer dans update, if not game.initiated ?
@@ -28,7 +37,24 @@ function love.load()
 		["2d"] = love.graphics.newImage("img/terrain2d.png"),
 		["2^"] = love.graphics.newImage("img/terrain2^.png"),
 	}
-	img_player = love.graphics.newImage("img/player.png")
+	
+	img_terrain_global = love.graphics.newImage("img/terrainglobal.png")
+	img_terrain_global_under = love.graphics.newImage("img/terrainglobal_under.png")
+	coords_imgs_terrain = {
+		["1^"] = love.graphics.newQuad(0, 50, 50, 55, 350, 105),
+		["1_"] = love.graphics.newQuad(50, 50, 50, 55, 350, 105),
+		["1u"] = love.graphics.newQuad(100, 50, 50, 55, 350, 105),
+		["1d"] = love.graphics.newQuad(150, 50, 50, 55, 350, 105),
+		["2u"] = love.graphics.newQuad(200, 0, 50, 105, 350, 105),
+		["2d"] = love.graphics.newQuad(250, 0, 50, 105, 350, 105),
+		["2^"] = love.graphics.newQuad(300, 0, 50, 105, 350, 105),
+	}
+	img_player = {
+		["normal"] = love.graphics.newImage("img/player.png"),
+		["aplati"] = love.graphics.newImage("img/player_aplati.png")
+	}
+	img_bg = love.graphics.newImage("img/background.jpg")
+	img_ov = love.graphics.newImage("img/overlay.jpg")
 end
 
 function love.update(dt)
@@ -87,7 +113,6 @@ function love.keypressed(key)
 		g.power = g.power + 1
 	elseif key == "t" then
 		toggleWorld()
-		
 	elseif key == "escape" then
 		love.event.quit()
 	end
@@ -110,18 +135,18 @@ function togglePause()
 end
 
 function toggleWorld()
-	-- Double check volontaire
-	if g.pworld == 1 and g.pY > 0 then
+print("b")
+	-- g.pY reste identique, le draw se charge de dessiner en bas et à l'envers
+	if g.pworld == 1 then -- (overworld) → Underworld
 		g.pworld = -1
-		g.offsetrot = 3.1415926535898
-		g.pY = -g.pY
-		g.pvY = -g.pvY
-	elseif g.pworld == -1 and g.pY < 0 then
+		
+	elseif g.pworld == -1 then -- (underworld) → Overworld
 		g.pworld = 1
-		g.offsetrot = 0
-		g.pY = -g.pY
-		g.pvY = -g.pvY
 	end
+	g.pX = -g.pX
+	g.pY = 8
+	g.pvY = 0
+	g.pstanding = false
 end
 
 ----------------------------------------

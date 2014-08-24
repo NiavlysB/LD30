@@ -6,6 +6,7 @@ h,
 offsetX,
 offsetY,
 zoom,
+marge_sol,
 
 -- Gamestate initial --
 state = "game",
@@ -20,6 +21,7 @@ offsetrot,
 pvX,
 pvY,
 power,
+etat,
 
 pworld, --  1 = Overworld ; -1 = Underworld  --
 pstanding,
@@ -30,6 +32,7 @@ tile,
 t,
 relx,
 rely,
+
 
 }
 

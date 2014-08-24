@@ -25,16 +25,34 @@ terrain = {}
 }]]
 function terrain.init()
 	terrain.t = {
+		[-1]  = "1_",
 		[0]  = "1_",
+		[1]  = "1_",
 	}
-	terrain.left = 0
-	terrain.right = 0
-	terrain.tunder = {
-		[0] = "1_",
-	}
+	terrain.left = -1
+	terrain.right = 1
 	
-	terrain.gen("gauche", 30)
-	terrain.gen("droite", 30)
+	terrain.gen(terrain.t, "gauche", 30)
+	terrain.gen(terrain.t, "droite", 30)
+
+	terrain.tunder = {
+		[-1]  = "1_",
+		[0]  = "1_",
+		[1]  = "1_",
+	}
+	--[[terrain.tunder = {
+		[-3] = "1d",
+		[-2] = "1u",
+		[-1] = "1d",
+		[0] = "1_",
+		[1] = "1u",
+		[2] = "2u",
+		[3] = "2^",
+	}--]]
+	terrain.left = -1
+	terrain.right = 1
+	terrain.gen(terrain.tunder, "gauche", 30)
+	terrain.gen(terrain.tunder, "droite", 30)
 	
 end
 --[[ Règles de génération du terrain :
@@ -72,11 +90,7 @@ gen_rules = {
 	["2^"] = {gauche = {"2^", "2u"}, droite = {"2^", "2d"} }, 
 }
 
-function sup(t1, t2)
-	-- doit renvoyer, de t1 ou t2, celui qui est le plus haut quand on est à la jonction des deux
-end
-
-function terrain.gen(dir, nb)
+function terrain.gen(tt, dir, nb)
 	local restant = nb or 10
 	local start, possibles
 	local pos
@@ -87,8 +101,8 @@ function terrain.gen(dir, nb)
 		pos = terrain.left - 1
 		
 		while restant > 0 do
-			possibles = gen_rules[terrain.t[pos+1]].gauche
-			terrain.t[pos] = possibles[math.random(1,#possibles)]
+			possibles = gen_rules[tt[pos+1]].gauche
+			tt[pos] = possibles[math.random(1,#possibles)]
 			restant = restant-1
 			pos = pos-1
 		end
@@ -98,8 +112,8 @@ function terrain.gen(dir, nb)
 		pos = terrain.right + 1
 		
 		while restant > 0 do
-			possibles = gen_rules[terrain.t[pos-1]].droite
-			terrain.t[pos] = possibles[math.random(1,#possibles)]
+			possibles = gen_rules[tt[pos-1]].droite
+			tt[pos] = possibles[math.random(1,#possibles)]
 			restant = restant-1
 			pos = pos+1
 		end
@@ -107,34 +121,29 @@ function terrain.gen(dir, nb)
 	end
 end
 
-function terrain.collisions(x, y)
-	--[[ plusieurs cas :
-			- entièrement à l’intérieur d’une « case »
-				- plate
-				- pentue à gauche
-				- pentue à droite
-				[possibilité futures de murs verticaux ? gérer l’arrêt et non le téléportage en haut du mur]
-			- à cheval sur deux cases
-				- identiques
-				- différentes : repérer laquelle est la plus haute
-	
-		OU ALORS :
-			Ne pas se faire chier à regarder les cas où on est à cheval sur deux cases.
-			On considère uniquement le point de référence du player (= entre les deux pieds).
-		→ suffira peut-être pour la génération de terrain actuelle, mais pas avec les potentiels futurs murs verticaux
-			→ possibilité de gérer à part ce cas particulier ?
-	]]
+function reverse(tt)
+	local tmp
+	for i,t in pairs(tt) do
+		if i < 0 then
+			tmp = tt[i]
+		end
+	end
+end
+		
+
+function terrain.collisions(tt, x, y)
 	-- TODO: adapter la fonction à l’Underworld
+	-- (elle marche bien, mais à l’envers, et en ×2)
 	
 	local newX = x
 	local newY = y
 	
-	-- TODO: Régler la rotation
+	-- TODO: Régler la rotation (?)
 	local r = 0
 	
 	if not g.pjumping then
 	
-		g.t = terrain.t[math.floor(x)]
+		g.t = tt[math.floor(x)]
 		g.rely = y-math.floor(y)
 		g.relx = x-math.floor(x)
 		if g.t == "1_" then
@@ -179,8 +188,6 @@ function terrain.collisions(x, y)
 				stopY()
 				r = -45
 			else
-				-- problème quand g.rely > g.relx
-				newY = newY+0.01
 				g.pstanding = false
 			end
 		elseif g.t == "2d" then
@@ -193,7 +200,6 @@ function terrain.collisions(x, y)
 			end
 		end
 	end
-	
 	return newX, newY, r
 end
 
@@ -203,15 +209,30 @@ function stopY()
 	g.pvY = 0
 end	
 
-function terrain.draw()
-	local marge_sol = 5 -- 5 pixels de marge en bas
-	for i,t in pairs(terrain.t) do
+function terrain.draw(tt, under)
+	under = under or false
+	
+	if under then
+		invert = math.pi
+	else
+		invert = 0
+	end
+	
+	for i,t in pairs(tt) do
 		if t == "2^" or t == "2u" or t == "2d" then
 			off = 2*g.tile
 		else
 			off = g.tile
 		end
-		--print(t)
-		love.graphics.draw(imgs_terrain[t], (i*g.tile + g.offsetX), (g.offsetY-off), 0, g.zoom, g.zoom)
+		if under then
+			off = -off-2*g.marge_sol
+			i = -i
+		end
+		--love.graphics.draw(imgs_terrain[t], (i*g.tile + g.offsetX), (g.offsetY-off), invert, g.zoom, g.zoom)
+		if under then
+		love.graphics.draw(img_terrain_global_under, coords_imgs_terrain[t], math.floor(i*g.tile + g.offsetX), math.floor(g.offsetY-off), invert, g.zoom, g.zoom)
+		else
+		love.graphics.draw(img_terrain_global, coords_imgs_terrain[t], math.floor(i*g.tile + g.offsetX), math.floor(g.offsetY-off), invert, g.zoom, g.zoom)
+		end
 	end
 end

@@ -9,12 +9,14 @@ function game.init()
 	g.offsetX = g.w/2
 	g.zoom = 1
 	g.camvX = 0
+	g.marge_sol = 5
 	
 	g.tile = 50
 	
 	g.pX = 0.5
-	g.pY = 8
+	g.pY = 10
 	g.r = 0
+	
 	
 	g.pvX = 0
 	g.pvY = 0
@@ -23,6 +25,7 @@ function game.init()
 	g.prunning = false
 	g.power = 1
 	g.pcoeffvitesse = 3
+	g.etat = "normal"
 	
 	g.pW = 20/g.tile
 	g.pH = 30/g.tile
@@ -32,7 +35,12 @@ function game.init()
 	
 	terrain.init()
 	
+	-- Test Underworld --
+	--g.pworld = -1
+	--g.pY = 3
+	
 	game.initiated = true
+	delay = 0
 end
 
 function game.update(dt)
@@ -44,9 +52,9 @@ function game.update(dt)
 	
 	-- Déplacement --
 	if left --[[and g.pstanding]] then
-		g.pvX = -1
+		g.pvX = -g.pworld
 	elseif right --[[and g.pstanding]] then
-		g.pvX = 1
+		g.pvX = g.pworld
 	else
 		-- [[ Décélération --
 		local decel = 0
@@ -68,11 +76,20 @@ function game.update(dt)
 	
 	-- Saut --
 	if up and not g.pjumping and g.pstanding then
+		g.etat = "aplati"
+		delay = 0.2
 		g.pjumping = true
 		g.pstanding = false
-		g.pvY = 15*g.pworld*g.power
+		g.pvY = 15*g.power
 	else
 		g.pjumping = false
+	end
+	
+	if delay > 0 then
+		delay = delay - dt
+	else
+		g.etat = "normal"
+		delay = 0
 	end
 	
 	-- Course --
@@ -85,17 +102,19 @@ function game.update(dt)
 	
 	-- Gravité --
 	if not g.pstanding then
-		g.const = -g.pworld
+		g.const = -1
 	else
 		g.const = 0
 	end
+	--print(g.const)
+	g.pvY = g.pvY + 9.81 * dt * g.const * 10
 	
 	-- Scrolling --
 	local marge = 200
 	local decalage = 5
-	if g.offsetX + (g.pX-g.pW/2)*g.tile < marge then
+	if g.offsetX + (g.pX*g.pworld-g.pW/2)*g.tile < marge then
 		goalOffset = g.offsetX + decalage
-	elseif g.offsetX + (g.pX-g.pW/2)*g.tile > g.w-marge then
+	elseif g.offsetX + (g.pX*g.pworld-g.pW/2)*g.tile > g.w-marge then
 		goalOffset = g.offsetX - decalage
 		g.camvX = g.pvX *1.2 ---
 	else
@@ -113,7 +132,6 @@ function game.update(dt)
 	-- TODO: à améliorer (goalOffset plus loin et vitesse camvX progressive)
 	g.offsetX = g.offsetX + g.camvX * dt * 200	
 	
-	g.pvY = g.pvY + 9.81 * dt * g.const * 10
 	
 	-- Mouvement personnage --
 	newX = g.pX + g.pvX * dt * g.pcoeffvitesse
@@ -122,14 +140,18 @@ function game.update(dt)
 	
 	-- Collisions terrain
 	-- TODO: rajouter la rotation pour mieux rendre sur les pentes
-	newX, newY, r = terrain.collisions(newX,newY)
+	if g.pworld == 1 then
+		newX, newY, r = terrain.collisions(terrain.t, newX,newY)
+	else
+		newX, newY, r = terrain.collisions(terrain.tunder, newX,newY)
+	end
 	--g.r = r
 	
 	g.pX = newX
 	g.pY = newY
 	
 	if g.pY > 21 then -- 42/2
-		toggleWorld()
+		--toggleWorld()
 	end
 	
 	-- Stabilisation si presque arrêté --
@@ -161,14 +183,36 @@ function game.draw()
 	end
 	--]]
 	
+	-- Fond --
+	love.graphics.draw(img_bg, g.w/2, g.h/2, 0, 1, 1, 800, 450)
+	
 	-- Terrain --
-	terrain.draw()
+	terrain.draw(terrain.t)
+	terrain.draw(terrain.tunder, true)
 	
 	-- Joueur --
 	-- (le point de référence sur le joueur est en bas au centre)
 	-- (entre ses deux pieds quoi)
-	love.graphics.draw(img_player, g.offsetX + (g.pX-g.pW/2)*g.tile, g.offsetY + ((-g.pY)-g.pH)*g.tile, offsetrot)
+	
+	--local finalX = g.offsetX + (g.pX-g.pW/2)*g.tile
+	--local finalY = g.offsetY + ((-g.pY)-g.pH)*g.tile
+	local finalX = g.offsetX + g.pX*g.tile
+	local finalY = g.offsetY - g.pY*g.tile
+	if g.pworld == -1 then
+		finalY = g.offsetY + g.pY*g.tile + 2*g.marge_sol
+		finalX = g.offsetX - g.pX*g.tile
+		g.offsetrot = math.pi
+	else
+		g.offsetrot = 0
+	end
+	love.graphics.draw(img_player[g.etat], finalX, finalY, g.offsetrot, 1, 1, (g.pW/2)*g.tile, g.pH*g.tile)
 	-- TODO: Régler la rotation								math.rad(g.r)
+	
+	-- Overlay --
+	love.graphics.setBlendMode("subtractive")
+	love.graphics.draw(img_ov, 0, 0, 0, g.w/1600, g.h/900)
+	love.graphics.setBlendMode("alpha")
+	
 	
 end
 
