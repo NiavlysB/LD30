@@ -12,6 +12,7 @@ function game.init()
 	
 	g.pX = 0
 	g.pY = 50
+	g.r = 0
 	
 	g.pvX = 0
 	g.pvY = 0
@@ -25,6 +26,7 @@ function game.init()
 	g.pH = 30
 	
 	g.pworld = 1
+	g.tile = 50
 	
 	terrain.init()
 	
@@ -37,11 +39,14 @@ function game.update(dt)
 	g.offsetY = g.h/2
 	
 	keysDown()
-	if left and g.pstanding then
+	
+	-- Déplacement --
+	if left --[[and g.pstanding]] then
 		g.pvX = -1
-	elseif right and g.pstanding then
+	elseif right --[[and g.pstanding]] then
 		g.pvX = 1
 	else
+		-- Décélération --
 		local decel = 0
 		if g.pstanding then
 			decel = 0.1
@@ -56,7 +61,7 @@ function game.update(dt)
 		end
 	end
 	
-	
+	-- Saut --
 	if up and not g.pjumping and g.pstanding then
 		g.pjumping = true
 		g.pstanding = false
@@ -65,6 +70,7 @@ function game.update(dt)
 		g.pjumping = false
 	end
 	
+	-- Course --
 	if shift and g.pstanding then
 		g.pcoeffvitesse = 400
 	else
@@ -81,8 +87,8 @@ function game.update(dt)
 
 	
 	-- Scrolling --
-	local marge = 100
-	local decalage = 200
+	local marge = 200
+	local decalage = 500
 	if g.offsetX + (g.pX-g.pW/2)*g.zoom < marge then
 		goalOffset = g.offsetX + decalage
 	elseif g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge then
@@ -91,11 +97,10 @@ function game.update(dt)
 	else
 		goalOffset = g.offsetX
 	end
-	--g.offsetX = goalOffset
 	if goalOffset < g.offsetX then
-		g.camvX = -1
+		g.camvX = -1.5
 	elseif goalOffset > g.offsetX then
-		g.camvX = 1
+		g.camvX = 1.5
 	else
 		g.camvX = 0
 	end
@@ -106,14 +111,16 @@ function game.update(dt)
 	
 	g.pvY = g.pvY + 9.81 * dt * g.const * 180
 	
+	-- Mouvement personnage --
 	newX = g.pX + g.pvX * dt * g.pcoeffvitesse
 	newY = g.pY + g.pvY * dt
 	
+	-- Stabilisation si presque arrêté --
 	if math.abs(g.pvX) < 0.1 then
 		g.pvX = 0
 	end
 	
-	-- Collision sol --
+	--[[ Collision sol --
 	-- TODO: à remplacer par une détection de collisions en fonction du terrain
 	if (not g.pstanding and not g.pjumping)
 	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= g.pH)) then
@@ -126,16 +133,29 @@ function game.update(dt)
 			newY = -g.pH*g.zoom
 		end
 	end
-		
+	]]
+	
+	-- Collisions terrain
+	-- TODO: rajouter la rotation pour mieux rendre sur les pentes
+	newX, newY = terrain.collisions(newX,newY)
+	
+	
 	g.pX = newX
 	g.pY = newY
+	
+	--[[
+	if g.pY < 0 then
+		g.pworld = -1
+	else
+		g.pworld = 1
+	end]]
 end
 
 function game.draw()
 	-- Infos --
 	love.graphics.print(g.w.."×"..g.h)
 	love.graphics.print("Player: "..g.pX..","..g.pY.." ("..g.pW.."×"..g.pH..")", 0, 14)
-	love.graphics.print("Vitesse: "..g.pvX..","..g.pvY, 250, 14)
+	--love.graphics.print("Vitesse: "..g.pvX..","..g.pvY, 250, 14)
 	love.graphics.print("Offset: "..g.offsetX..","..g.offsetY.." (vitesse : "..g.camvX..")", 0, 28)
 	if g.pstanding then
 		love.graphics.print("Standing.", 0, 42)
@@ -149,14 +169,17 @@ function game.draw()
 	end
 	local marge = 0
 	love.graphics.print("Pos X écran : "..g.offsetX + (g.pX-g.pW/2)*g.zoom.."\n (".._(g.offsetX + (g.pX-g.pW/2)*g.zoom < marge).."/".._(g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge)..")", 0, 56)
+	if g.t and g.relx and g.rely then
+		love.graphics.print("Terrain : "..g.t..". Rel X/Y : "..g.relx..","..g.rely, 0, 84)
+	end
 	
 	-- Terrain --
 	terrain.draw()
 	
-	-- Sol --
+	-- Ancien sol --
 	--love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
 	-- Origine --
-	love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
+	--love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
 	
 	-- Joueur --
 	-- (le point de référence sur le joueur est en bas au centre)

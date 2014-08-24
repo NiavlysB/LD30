@@ -71,10 +71,14 @@ gen_rules = {
 	["2^"] = {gauche = {"2^", "2u"}, droite = {"2^", "2d"} }, 
 }
 
+function sup(t1, t2)
+	-- doit renvoyer, de t1 ou t2, celui qui est le plus haut quand on est à la jonction des deux
+end
 
 function terrain.gen(dir, nb)
 	local restant = nb or 10
 	local start, possibles
+	local pos
 	
 	love.math.setRandomSeed(love.timer.getTime())
 	
@@ -100,40 +104,101 @@ function terrain.gen(dir, nb)
 		end
 		terrain.right = pos-1
 	end
-	--elseif dir == "droite" then
-	--	start = terrain.right + 1
-		
-	
 end
 
-function terrain.collision(x, y)
+function terrain.collisions(x, y)
+	--[[ plusieurs cas :
+			- entièrement à l’intérieur d’une « case »
+				- plate
+				- pentue à gauche
+				- pentue à droite
+				[possibilité futures de murs verticaux ? gérer l’arrêt et non le téléportage en haut du mur]
+			- à cheval sur deux cases
+				- identiques
+				- différentes : repérer laquelle est la plus haute
 	
+		OU ALORS :
+			Ne pas se faire chier à regarder les cas où on est à cheval sur deux cases.
+			On considère uniquement le point de référence du player (= entre les deux pieds).
+		→ suffira peut-être pour la génération de terrain actuelle, mais pas avec les potentiels futurs murs verticaux
+			→ possibilité de gérer à part ce cas particulier ?
+	]]
+	-- TODO: adapter la fonction à l’Underworld
+	
+	local newX = x
+	local newY = y
+	
+	if not g.pjumping then
+	
+		g.t = terrain.t[(x-(x % g.tile))/g.tile]
+		g.rely = y % g.tile
+		g.relx = math.abs(x) % g.tile
+		if g.t == "1_" then
+			if y < 0 then -- TODO: À l’avenir il faudra une certaine épaisseur au sol, mais peut-être que ça pourra rester en dessous du zéro ?
+				newY = 0
+				stopY()
+			end
+		elseif t == "1^" then
+			if y < g.tile then
+				newY = g.tile
+				stopY()
+			end
+		elseif t == "2^" then
+			if y < 2*g.tile then
+				newY = 2*g.tile
+				stopY()
+			end
+		elseif t == "1u" then
+			if rely < relx then
+				newY = relx
+				stopY()
+			else
+				g.pstanding = false
+			end
+		elseif t == "1d" then
+			if rely > g.tile-relx then
+				newY = relx
+				print(relx)
+				stopY()
+			else
+				g.pstanding = false
+			end
+		elseif t == "2u" then
+			if rely < relx then
+				newY = relx+g.tile
+				stopY()
+			else
+				g.pstanding = false
+			end--[[
+		elseif t == "1u" then
+			if rely < relx then
+				newY = relx
+				stopY()
+			else
+				g.pstanding = false
+			end]]
+		
+		end
+	end
+	
+	return newX, newY
 end
+
+function stopY()
+	g.pstanding = true
+	g.pjumping = false
+	g.pvY = 0
+end	
 
 function terrain.draw()
 	
 	for i,t in pairs(terrain.t) do
 		if t == "2^" or t == "2u" or t == "2d" then
-			off = 100
+			off = 2*g.tile
 		else
-			off = 50
+			off = g.tile
 		end
 		--print(t)
-		love.graphics.draw(imgs_terrain[t], (i*50*g.zoom + g.offsetX), (g.offsetY-off), 0, g.zoom, g.zoom)
-		--[[
-		if t == 0 then
-			--love.graphics.rectangle("fill", (i*50 + g.offsetX)*g.zoom, g.offsetY, 1*g.zoom, 2)
-		elseif t == 1 then
-			love.graphics.rectangle("fill", (i*50 + g.offsetX*g.zoom), g.offsetY, 50*g.zoom, 2)
-		elseif t == 2 then
-			love.graphics.rectangle("fill", (i*50 + g.offsetX*g.zoom), (g.offsetY*g.zoom-50), 50*g.zoom, 2)
-		
-		end
-		]]
+		love.graphics.draw(imgs_terrain[t], (i*g.tile*g.zoom + g.offsetX), (g.offsetY-off), 0, g.zoom, g.zoom)
 	end
-	
-	-- Sol --
-	--love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
-	-- Origine --
-	love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
 end

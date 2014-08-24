@@ -15,6 +15,7 @@ pX,
 pY,
 pH,
 pW,
+r,
 pvX,
 pvY,
 power,
@@ -23,6 +24,11 @@ pworld, --  1 = Overworld ; -1 = Underworld  --
 pstanding,
 pjumping,
 const,
+
+tile,
+t,
+relx,
+rely,
 
 }
 
