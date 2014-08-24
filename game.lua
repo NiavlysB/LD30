@@ -10,8 +10,10 @@ function game.init()
 	g.zoom = 1
 	g.camvX = 0
 	
-	g.pX = 0
-	g.pY = 50
+	g.tile = 50
+	
+	g.pX = 0.5
+	g.pY = 8
 	g.r = 0
 	
 	g.pvX = 0
@@ -20,13 +22,13 @@ function game.init()
 	g.pjumping = false
 	g.prunning = false
 	g.power = 1
-	g.pcoeffvitesse = 300
+	g.pcoeffvitesse = 3
 	
-	g.pW = 20
-	g.pH = 30
+	g.pW = 20/g.tile
+	g.pH = 30/g.tile
 	
+	g.offsetrot = 0
 	g.pworld = 1
-	g.tile = 50
 	
 	terrain.init()
 	
@@ -46,35 +48,38 @@ function game.update(dt)
 	elseif right --[[and g.pstanding]] then
 		g.pvX = 1
 	else
-		-- Décélération --
+		-- [[ Décélération --
 		local decel = 0
 		if g.pstanding then
 			decel = 0.1
 		else
 			decel = 0.01
 		end
+		--decel = 0.5 -- tmp
 		
 		if g.pvX > 0 then
 			g.pvX = g.pvX - decel
 		elseif g.pvX < 0 then
 			g.pvX = g.pvX + decel
 		end
+		--]]
+		--g.pvX = 0
 	end
 	
 	-- Saut --
 	if up and not g.pjumping and g.pstanding then
 		g.pjumping = true
 		g.pstanding = false
-		g.pvY = 300*g.pworld*g.power
+		g.pvY = 15*g.pworld*g.power
 	else
 		g.pjumping = false
 	end
 	
 	-- Course --
 	if shift and g.pstanding then
-		g.pcoeffvitesse = 400
+		g.pcoeffvitesse = 8
 	else
-		g.pcoeffvitesse = 300
+		g.pcoeffvitesse = 5
 	end
 
 	
@@ -84,14 +89,13 @@ function game.update(dt)
 	else
 		g.const = 0
 	end
-
 	
 	-- Scrolling --
 	local marge = 200
-	local decalage = 500
-	if g.offsetX + (g.pX-g.pW/2)*g.zoom < marge then
+	local decalage = 5
+	if g.offsetX + (g.pX-g.pW/2)*g.tile < marge then
 		goalOffset = g.offsetX + decalage
-	elseif g.offsetX + (g.pX-g.pW/2)*g.zoom > g.w-marge then
+	elseif g.offsetX + (g.pX-g.pW/2)*g.tile > g.w-marge then
 		goalOffset = g.offsetX - decalage
 		g.camvX = g.pvX *1.2 ---
 	else
@@ -106,53 +110,36 @@ function game.update(dt)
 	end
 	
 	-- Scrolling --
-	-- TODO: à améliorer
+	-- TODO: à améliorer (goalOffset plus loin et vitesse camvX progressive)
 	g.offsetX = g.offsetX + g.camvX * dt * 200	
 	
-	g.pvY = g.pvY + 9.81 * dt * g.const * 180
+	g.pvY = g.pvY + 9.81 * dt * g.const * 10
 	
 	-- Mouvement personnage --
 	newX = g.pX + g.pvX * dt * g.pcoeffvitesse
 	newY = g.pY + g.pvY * dt
 	
-	-- Stabilisation si presque arrêté --
-	if math.abs(g.pvX) < 0.1 then
-		g.pvX = 0
-	end
-	
-	--[[ Collision sol --
-	-- TODO: à remplacer par une détection de collisions en fonction du terrain
-	if (not g.pstanding and not g.pjumping)
-	   and ((g.pworld == 1 and g.pY <=0) or (g.pworld == -1 and g.pY >= g.pH)) then
-		g.pstanding = true
-		g.pjumping = false
-		g.pvY = 0
-		if g.pworld == 1 then
-			newY = 0
-		else
-			newY = -g.pH*g.zoom
-		end
-	end
-	]]
 	
 	-- Collisions terrain
 	-- TODO: rajouter la rotation pour mieux rendre sur les pentes
-	newX, newY = terrain.collisions(newX,newY)
-	
+	newX, newY, r = terrain.collisions(newX,newY)
+	--g.r = r
 	
 	g.pX = newX
 	g.pY = newY
 	
-	--[[
-	if g.pY < 0 then
-		g.pworld = -1
-	else
-		g.pworld = 1
-	end]]
+	if g.pY > 21 then -- 42/2
+		toggleWorld()
+	end
+	
+	-- Stabilisation si presque arrêté --
+	if math.abs(g.pvX) < 0.1 then
+		g.pvX = 0
+	end
 end
 
 function game.draw()
-	-- Infos --
+	-- [[ Infos --
 	love.graphics.print(g.w.."×"..g.h)
 	love.graphics.print("Player: "..g.pX..","..g.pY.." ("..g.pW.."×"..g.pH..")", 0, 14)
 	--love.graphics.print("Vitesse: "..g.pvX..","..g.pvY, 250, 14)
@@ -172,24 +159,17 @@ function game.draw()
 	if g.t and g.relx and g.rely then
 		love.graphics.print("Terrain : "..g.t..". Rel X/Y : "..g.relx..","..g.rely, 0, 84)
 	end
+	--]]
 	
 	-- Terrain --
 	terrain.draw()
 	
-	-- Ancien sol --
-	--love.graphics.rectangle("fill", g.offsetX - g.w/2, g.offsetY, g.w*g.zoom, 1)
-	-- Origine --
-	--love.graphics.rectangle("fill", g.offsetX - (5/2)*g.zoom, g.offsetY -(5/2)*g.zoom, 5*g.zoom, 5*g.zoom)
-	
 	-- Joueur --
 	-- (le point de référence sur le joueur est en bas au centre)
 	-- (entre ses deux pieds quoi)
-	love.graphics.draw(img_player, g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom)
+	love.graphics.draw(img_player, g.offsetX + (g.pX-g.pW/2)*g.tile, g.offsetY + ((-g.pY)-g.pH)*g.tile, offsetrot)
+	-- TODO: Régler la rotation								math.rad(g.r)
 	
-	--love.graphics.rectangle("fill", g.offsetX + (g.pX-g.pW/2)*g.zoom, g.offsetY + ((-g.pY)-g.pH)*g.zoom, g.pW*g.zoom, g.pH*g.zoom)
-	--love.graphics.setColor(255,0,0,255)
-	--love.graphics.rectangle("fill", g.offsetX + g.pX*g.zoom, g.offsetY + (-g.pY)*g.zoom, 1, 1)
-	--b()
 end
 
 ---------------------------------

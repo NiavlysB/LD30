@@ -7,9 +7,9 @@ require("terrain")
 --         pour pouvoir mettre en pause dans n’importe quel gamestate ?
 --       - faire que la pause volontaire (p) puisse cohabiter avec l’automatique
 --
---       - avoir un système d’unités interne plus adapté, style 1 par bloc de terrain (et non 1 par pixel)
---       - Terrain
---       - Au bout de trois rebonds *consécutifs*, faire que le perso se ramasse par terre
+
+--		 - Delay pour le saut, histoire d’éviter les sauts consécutifs
+--       - Au bout de trois rebonds *consécutifs*, faire que le perso se ramasse par terre ?
 --       - Cycle jour/nuit. Faire que le jour de l’un soit la nuit de l’autre, et inversement ?
 --       - Plusieurs règles de génération de terrain + thème
 --		    (par exemple un terrain plus accidenté et gris)
@@ -36,10 +36,10 @@ function love.update(dt)
 		game.init()
 	end
 	--[[
-	if dt < 1/10 then
-		love.timer.sleep(1/10 - dt)
+	if dt < 1/5 then
+		love.timer.sleep(1/5 - dt)
 	end
-	]]--
+	--]]--
 	
 	if not love.window.hasFocus() then
 		g.state = "pause"
@@ -62,9 +62,9 @@ function love.draw()
 		pause_draw()
 	end
 	
-	-- local delta = love.timer.getAverageDelta()
-   	-- Display the frame time in milliseconds for convenience.
+	-- Display the frame time in milliseconds for convenience.
    	-- A lower frame time means more frames per second.
+   	--local delta = love.timer.getAverageDelta()
    	--love.graphics.print(string.format("%.3f ms", 1000 * delta), 10, 60)
 end
 
@@ -85,6 +85,9 @@ function love.keypressed(key)
 	
 	elseif key == " " then
 		g.power = g.power + 1
+	elseif key == "t" then
+		toggleWorld()
+		
 	elseif key == "escape" then
 		love.event.quit()
 	end
@@ -103,6 +106,21 @@ function togglePause()
 		g.state = "game"
 	elseif g.state == "game" then
 		g.state = "pause"
+	end
+end
+
+function toggleWorld()
+	-- Double check volontaire
+	if g.pworld == 1 and g.pY > 0 then
+		g.pworld = -1
+		g.offsetrot = 3.1415926535898
+		g.pY = -g.pY
+		g.pvY = -g.pvY
+	elseif g.pworld == -1 and g.pY < 0 then
+		g.pworld = 1
+		g.offsetrot = 0
+		g.pY = -g.pY
+		g.pvY = -g.pvY
 	end
 end
 
