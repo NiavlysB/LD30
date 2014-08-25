@@ -32,8 +32,8 @@ function terrain.init()
 	terrain.left = -1
 	terrain.right = 1
 	
-	terrain.gen(terrain.t, "gauche", 30)
-	terrain.gen(terrain.t, "droite", 30)
+	--terrain.genboth("gauche", 10)
+	--terrain.gen(terrain.t, "droite", 10)
 
 	terrain.tunder = {
 		[-1]  = "1_",
@@ -49,12 +49,68 @@ function terrain.init()
 		[2] = "2u",
 		[3] = "2^",
 	}--]]
-	terrain.left = -1
+	--terrain.left = -1
+	--terrain.right = 1
+	terrain.genboth("gauche", 20)
 	terrain.right = 1
-	terrain.gen(terrain.tunder, "gauche", 30)
-	terrain.gen(terrain.tunder, "droite", 30)
+	terrain.genboth("droite", 20)
+	--terrain.gen(terrain.tunder, "droite", 10)
 	
 end
+
+terrain.orbs = {
+	[1] = {},
+	[-1] = {}
+}
+
+function terrain.height(pos,world)
+	local tt
+	if world == 1 then
+		tt = terrain.t
+	elseif world == -1 then
+		tt = terrain.tunder
+	end
+	
+	if tt[pos] == "1_" then
+		return 0
+	elseif tt[pos] == "1u" or tt[pos] == "1d" then
+		return 0.5
+	elseif tt[pos] == "1^" then
+		return 1
+	elseif tt[pos] == "2u" or tt[pos] == "2d" then
+		return 1.5
+	elseif tt[pos] == "2^" then
+		return 2
+	end
+end
+	
+function terrain.extremes(tt)
+	min = 0
+	max = 0
+	for i,_ in pairs(terrain.t) do
+		if i<min then
+			min = i
+		elseif i>max then
+			max = i
+		end
+	end
+	return min, max
+end
+
+function terrain.genboth(dir, nb)
+	local l = terrain.left
+	local r = terrain.right
+	local udir
+	if dir == "gauche" then udir = "droite"
+	else udir = "gauche" end
+	--print(terrain.left, terrain.right)
+	terrain.gen(terrain.t, dir, nb)
+	--print(terrain.left, terrain.right)
+	terrain.left = l
+	terrain.right = r
+	terrain.gen(terrain.tunder, udir, nb)
+end
+
 --[[ Règles de génération du terrain :
 	
 	  1_	gauche → "1_", "1d"
@@ -96,7 +152,7 @@ function terrain.gen(tt, dir, nb)
 	local pos
 	
 	love.math.setRandomSeed(love.timer.getTime())
-	
+	print("_____")
 	if dir == "gauche" then
 		pos = terrain.left - 1
 		
@@ -112,6 +168,7 @@ function terrain.gen(tt, dir, nb)
 		pos = terrain.right + 1
 		
 		while restant > 0 do
+			print(pos-1)
 			possibles = gen_rules[tt[pos-1]].droite
 			tt[pos] = possibles[math.random(1,#possibles)]
 			restant = restant-1
@@ -122,6 +179,7 @@ function terrain.gen(tt, dir, nb)
 end
 
 function reverse(tt)
+	-- Euh, pas fini et pas utile, je crois --
 	local tmp
 	for i,t in pairs(tt) do
 		if i < 0 then
@@ -132,13 +190,10 @@ end
 		
 
 function terrain.collisions(tt, x, y)
-	-- TODO: adapter la fonction à l’Underworld
-	-- (elle marche bien, mais à l’envers, et en ×2)
-	
 	local newX = x
 	local newY = y
 	
-	-- TODO: Régler la rotation (?)
+	-- TODO: Régler la rotation (NON)
 	local r = 0
 	
 	if not g.pjumping then
@@ -147,7 +202,7 @@ function terrain.collisions(tt, x, y)
 		g.rely = y-math.floor(y)
 		g.relx = x-math.floor(x)
 		if g.t == "1_" then
-			if y < 0 then -- TODO: À l’avenir il faudra une certaine épaisseur au sol, mais peut-être que ça pourra rester en dessous du zéro ?
+			if y < 0 then
 				newY = 0
 				stopY()
 			end

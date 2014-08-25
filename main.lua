@@ -20,11 +20,16 @@ require("terrain")
 
 
 -- Priorités :
---  	- But, victoire avec un minimum de difficulté
---		- Graphismes potables (je le fais en 1)
---		- Caméra plus fluide
---		- Menu, écrans…
---		- soleil qui tourne ?
+--  	* But, victoire avec un minimum de difficulté
+--		/ Graphismes potables
+--		* Monde auto-générant à mesure qu’on l’explore (ou *au pire* mettre une limite)
+--		* Boussole ! (ou vent poussant le personnage dans la bonne direction pdt 1 sec)
+--		* Menu, écrans…
+--		* Animations
+--		* Caméra plus fluide
+--		* soleil qui tourne ?
+
+--		Avant le packaging, penser à enlever tous les print et les touches de debug
 
 function love.load()
 	--game.init() -- à déplacer dans update, if not game.initiated ?
@@ -55,12 +60,13 @@ function love.load()
 	}
 	img_bg = love.graphics.newImage("img/background.jpg")
 	img_ov = love.graphics.newImage("img/overlay.jpg")
+	img_orbe = love.graphics.newImage("img/orbe.png")
+	g.w = love.window.getWidth()
+	g.h = love.window.getHeight()
+	game.init()
 end
 
 function love.update(dt)
-	if not game.initiated then
-		game.init()
-	end
 	--[[
 	if dt < 1/5 then
 		love.timer.sleep(1/5 - dt)
@@ -74,7 +80,10 @@ function love.update(dt)
 	end
 	
 	if g.state == "game" then
-
+		if not game.initiated then
+			game.init()
+		end
+	
 		game.update(dt)
 	--elseif g.state == "pause" then
 	--	pause.update(dt)
@@ -82,7 +91,9 @@ function love.update(dt)
 end
 
 function love.draw()
-	if g.state == "game" then
+	if g.state == "menu" then
+		love.graphics.print("Press a key…", 10, 10)
+	elseif g.state == "game" then
 		game.draw(dt)
 	elseif g.state == "pause" then
 		pause_draw()
@@ -97,24 +108,35 @@ end
 ------------------------------
 
 function love.keypressed(key)
-	if key == "tab" then
-		toggleFullscreen()
-	elseif key == "p" then
-		togglePause()
-	elseif key == "r" then
-		game.init()
+	if g.state == "game" then
+		if key == "tab" then
+			toggleFullscreen()
+		elseif key == "p" then
+			togglePause()
+		--elseif key == "r" then
+		--	game.init()
 		
-	elseif key == "kp+" then
-		g.zoom = g.zoom + 0.1
-	elseif key == "kp-" then
-		g.zoom = g.zoom - 0.1
+		--elseif key == "kp+" then
+		--	g.zoom = g.zoom + 0.1
+		--elseif key == "kp-" then
+		--	g.zoom = g.zoom - 0.1
 	
-	elseif key == " " then
-		g.power = g.power + 1
-	elseif key == "t" then
-		toggleWorld()
-	elseif key == "escape" then
-		love.event.quit()
+		--elseif key == " " then
+			--g.power = g.power + 1
+		---elseif key == "t" then
+		--	toggleWorld()
+		--elseif key == "g" then
+		--	game.newlevel()	
+	
+		elseif key == "escape" then
+			g.state = "menu"
+		end
+	elseif g.state == "menu" then
+		if key == "escape" then
+			love.event.quit()
+		else
+			g.state = "game"
+		end
 	end
 end
 
@@ -135,7 +157,6 @@ function togglePause()
 end
 
 function toggleWorld()
-print("b")
 	-- g.pY reste identique, le draw se charge de dessiner en bas et à l'envers
 	if g.pworld == 1 then -- (overworld) → Underworld
 		g.pworld = -1
@@ -144,7 +165,7 @@ print("b")
 		g.pworld = 1
 	end
 	g.pX = -g.pX
-	g.pY = 8
+	g.pY = (g.h/2)/g.tile
 	g.pvY = 0
 	g.pstanding = false
 end

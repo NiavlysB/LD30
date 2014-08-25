@@ -7,9 +7,11 @@ offsetX,
 offsetY,
 zoom,
 marge_sol,
+level,
+goalworld,
 
 -- Gamestate initial --
-state = "game",
+state = "menu",
 
 -- Player --
 pX,
