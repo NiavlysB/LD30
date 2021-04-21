@@ -70,8 +70,8 @@ function genorbs()
 end
 
 function game.update(dt)
-	g.w = love.window.getWidth()
-	g.h = love.window.getHeight()
+	g.w = love.graphics.getWidth()
+	g.h = love.graphics.getHeight()
 	g.offsetY = g.h/2
 	
 	keysDown()
@@ -194,12 +194,12 @@ function game.update(dt)
 	
 	if g.pworld == 1 and terrain.orbs[1][math.floor(g.pX)] then
 		terrain.orbs[1][math.floor(g.pX)] = false
-		if g.power == 1 then forcejump = true end
+		--if g.power == 1 then forcejump = true end
 		g.power = g.power+.5
 	end
 	if g.pworld == -1 and terrain.orbs[-1][math.floor(g.pX)] then
 		terrain.orbs[-1][math.floor(g.pX)] = false
-		if g.power == 1 then forcejump = true end
+		--if g.power == 1 then forcejump = true end
 		g.power = g.power+.5
 		
 	end
@@ -234,7 +234,7 @@ function game.draw()
 	
 	-- But --
 	-- Le but est de l’autre côté du monde --
-	love.graphics.setBlendMode("additive")
+	love.graphics.setBlendMode("add")
 	love.graphics.setColor(math.random(255),math.random(255),math.random(255),math.random(100,255))
 	local heightgoal = terrain.height(g.goal, g.pworld)
 	local finalHeight, finalXGoal, ystart
@@ -267,7 +267,7 @@ function game.draw()
 	end
 	
 	-- Overlay --
-	love.graphics.setBlendMode("subtractive")
+	love.graphics.setBlendMode("subtract")
 	love.graphics.draw(img_ov, 0, 0, 0, g.w/1600, g.h/900)
 	love.graphics.setBlendMode("alpha")
 	

@@ -152,7 +152,7 @@ function terrain.gen(tt, dir, nb)
 	local pos
 	
 	love.math.setRandomSeed(love.timer.getTime())
-	print("_____")
+	--print("_____")
 	if dir == "gauche" then
 		pos = terrain.left - 1
 		
@@ -168,7 +168,7 @@ function terrain.gen(tt, dir, nb)
 		pos = terrain.right + 1
 		
 		while restant > 0 do
-			print(pos-1)
+			--print(pos-1)
 			possibles = gen_rules[tt[pos-1]].droite
 			tt[pos] = possibles[math.random(1,#possibles)]
 			restant = restant-1

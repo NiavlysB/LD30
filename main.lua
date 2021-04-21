@@ -32,8 +32,9 @@ require("terrain")
 --		Avant le packaging, penser à enlever tous les print et les touches de debug
 
 function love.load()
+	love.timer.sleep(1)
 	--game.init() -- à déplacer dans update, if not game.initiated ?
-	imgs_terrain = {
+	--[[imgs_terrain = {
 		["1_"] = love.graphics.newImage("img/terrain1_.png"),
 		["1u"] = love.graphics.newImage("img/terrain1u.png"),
 		["1d"] = love.graphics.newImage("img/terrain1d.png"),
@@ -41,7 +42,7 @@ function love.load()
 		["2u"] = love.graphics.newImage("img/terrain2u.png"),
 		["2d"] = love.graphics.newImage("img/terrain2d.png"),
 		["2^"] = love.graphics.newImage("img/terrain2^.png"),
-	}
+	}]]
 	
 	img_terrain_global = love.graphics.newImage("img/terrainglobal.png")
 	img_terrain_global_under = love.graphics.newImage("img/terrainglobal_under.png")
@@ -61,12 +62,12 @@ function love.load()
 	img_bg = love.graphics.newImage("img/background.jpg")
 	img_ov = love.graphics.newImage("img/overlay.jpg")
 	img_orbe = love.graphics.newImage("img/orbe.png")
-	g.w = love.window.getWidth()
-	g.h = love.window.getHeight()
-	game.init()
 end
 
 function love.update(dt)
+	g.w = love.graphics.getWidth()
+	g.h = love.graphics.getHeight()
+	
 	--[[
 	if dt < 1/5 then
 		love.timer.sleep(1/5 - dt)
